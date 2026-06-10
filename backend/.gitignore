@@ -1,2 +1,5 @@
+# Ignore dependencies (installed packages)
 node_modules/
+
+# Ignore environment variables (sensitive data like DB URL, JWT secret)
 .env
