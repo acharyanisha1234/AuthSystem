@@ -20,4 +20,4 @@ router.delete("/:id", verifyToken, verifyRole("admin"), deleteUser);
 // GET LOGGED IN USER PROFILE
 router.get("/me", verifyToken, getProfile);
 
-export default router;
+export default router; 
