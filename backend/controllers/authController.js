@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 
 //===REGISTER USER===
 export const register = async (req, res) => {
-    const {username, email, password} = req.body;
+    const {username, email, password, role} = req.body;
 
     // Check if all required fields are provided
     if(!username || !email || !password) {
@@ -26,6 +26,7 @@ export const register = async (req, res) => {
             username,
             email,
             password: hashedPassword,
+            role: role || "user"
         });
         await user.save(); // Save user to database
         res.status(201).json({
