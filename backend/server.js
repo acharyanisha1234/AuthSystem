@@ -4,7 +4,7 @@ import { connectDB } from "./config/db.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/authRoutes.js";
-import userRoutes from "./routes/user.js"; // ⚠️ FIX THIS NAME if different
+import userRoutes from "./routes/user.js"; // FIX THIS NAME if different
 
 dotenv.config();
 
@@ -24,7 +24,6 @@ app.use(cookieParser());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-
 
 // DB Connection
 connectDB();

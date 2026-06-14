@@ -1,39 +1,39 @@
+// backend/middleware/authMiddleware.js
 import jwt from "jsonwebtoken";
 
- //===VERIFY TOKEN===
- // Middleware to verify JWT access token
+// Verify JWT token
 export const verifyToken = (req, res, next) => {
-    const authHeader = req.headers.authorization; // Get Authorization header from request
-    // Check if token is provided
-    if (!authHeader) {
-        return res.status(401).json({ message: "No token provided"});
+    let token;
 
+    // Get token from Authorization header
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+        token = req.headers.authorization.split(" ")[1];
     }
-     // Extract token from "Bearer <token>"
-    const token = authHeader.split(" ")[1];
-    // Verify token using secret key
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-        // If token is invalid or expired
-        if (err) {
-            return res.status(403).json({message: "Invalid token"});
-        }
-        req.user = user; // Store decoded user information in request object
-        next();// Pass control to next middleware
 
-    });
-}
+    if (!token) {
+        return res.status(401).json({ message: "Access denied. No token provided." });
+    }
 
-//===VERIFY ROLE===
-// Middleware to check if user has the required role
-export const verifyRole = (role) => {
-    // Return middleware function
-    return (req, res, next) => {
-        // Get role from authenticated user
-        const userRole = req.user?.role;
-        // Check if user's role matches required role
-        if (userRole !== role) {
-            return res.status(403).json({message: "Access Denied"});
-        }
-    next(); // Allow access if role matches
+    try {
+        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: "Invalid token." });
+    }
 };
+
+// Verify role (Factory function)
+export const verifyRole = (allowedRole) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({ message: "Not authenticated" });
+        }
+        
+        if (req.user.role === allowedRole) {
+            next();
+        } else {
+            return res.status(403).json({ message: `Access denied. ${allowedRole} only.` });
+        }
+    };
 };
