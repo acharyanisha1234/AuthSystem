@@ -1,51 +1,52 @@
+import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+import "./index.css";
+import { ToastProvider } from "./context/ToastContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import DashboardLayout from "./components/DashboardLayout";
+import AuthPage from "./pages/AuthPage";
+import AccessDenied from "./pages/AccessDenied";
 import AdminDashboard from "./pages/AdminDashboard";
 import StaffDashboard from "./pages/StaffDashboard";
-import UserDashboard from "./pages/UserDashboard";
-import Navbar from "./components/Navbar";
-import ProtectedRoute from "./components/ProtectedRoute";
+import CustomerDashboard from "./pages/CustomerDashboard";
+import Profile from "./pages/Profile";
+import UserManagement from "./pages/UserManagement";
+import CreateStaff from "./pages/CreateStaff";
 
 function App() {
-    return (
-        <>
-            <Navbar />
-            <div className="container mx-auto mt-4">
-                <Routes>
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
+  return (
+    <ToastProvider>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<AuthPage />} />
+        <Route path="/access-denied" element={<AccessDenied />} />
 
-                    <Route
-                        path="/admin"
-                        element={
-                            <ProtectedRoute allowedRoles={["admin"]}>
-                                <AdminDashboard />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/staff"
-                        element={
-                            <ProtectedRoute allowedRoles={["staff"]}>
-                                <StaffDashboard />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/user"
-                        element={
-                            <ProtectedRoute allowedRoles={["user"]}>
-                                <UserDashboard />
-                            </ProtectedRoute>
-                        }
-                    />
+        {/* Protected Dashboard Routes (Shared Layout) */}
+        <Route element={<DashboardLayout />}>
+          {/* Admin Only Routes */}
+          <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<UserManagement />} />
+            <Route path="/admin/create-staff" element={<CreateStaff />} />
+          </Route>
 
-                    <Route path="/" element={<Navigate to="/login" replace />} />
-                </Routes>
-            </div>
-        </>
-    );
+          {/* Staff & Admin Routes */}
+          <Route element={<ProtectedRoute allowedRoles={["STAFF", "ADMIN"]} />}>
+            <Route path="/staff" element={<StaffDashboard />} />
+          </Route>
+
+          {/* All Authenticated Roles Routes */}
+          <Route element={<ProtectedRoute allowedRoles={["CUSTOMER", "STAFF", "ADMIN"]} />}>
+            <Route path="/customer" element={<CustomerDashboard />} />
+            <Route path="/profile" element={<Profile />} />
+          </Route>
+        </Route>
+
+        {/* Catch-All Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </ToastProvider>
+  );
 }
 
 export default App;

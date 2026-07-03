@@ -2,49 +2,108 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-//===REGISTER USER===
+// REGISTER
 export const register = async (req, res) => {
-    const {username, email, password, role} = req.body;
+  const { username, email, password, role } = req.body;
 
-    // Check if all required fields are provided
-    if(!username || !email || !password) {
-        return res.status(400).json({ message: "All fields are required"});
-    
+  if (!username || !email || !password) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  try {
+    // Check duplicate email
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
+      return res.status(400).json({ message: "Email already registered" });
     }
-    try {
-        // Check if a user with the same email already exists
-        const existingUser = await User.findOne({email});
-        if(existingUser) {
-            return res.status(400).json({message:"User already exists"});
-        }
 
-        // Hash the password before saving
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Create a new user instance
-        const user = new User ({
-            username,
-            email,
-            password: hashedPassword,
-            role: role || "user"
-        });
-        await user.save(); // Save user to database
-        res.status(201).json({
-            message: "User registered successfully",
-            user: {
-                id: user._id,
-                username: user.username,
-                email:user.email,
-                role: user.role,
-            }
-        });
-        
-    } catch (error) {
-        console.error("Error registering user:", error); //log error
-        return res.status(400).json({ message:"Server error"}); // Return server error response
-        
+    // Check duplicate username
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      return res.status(400).json({ message: "Username already taken" });
     }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({
+      username,
+      email,
+      password: hashedPassword,
+      role: role ? role.toUpperCase() : "CUSTOMER",   // force uppercase
+    });
+
+    await user.save();
+
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Register error:", error);
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({ message: `${field} already exists` });
+    }
+    return res.status(500).json({ message: "Internal server error" });
+  }
 };
+
+// LOGIN (unchanged, but role is already uppercase)
+export const login = async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const accessToken = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.ACCESS_TOKEN_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    const refreshToken = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    res.status(200).json({
+      accessToken,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,   // already uppercase
+      },
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 
 //===LOGING USER===
 export const login = async (req, res) => {
