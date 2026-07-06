@@ -14,11 +14,13 @@ const AuthPage = () => {
   const [registerData, setRegisterData] = useState({
     username: "",
     email: "",
+    fullName: "",          // ✅ Added fullName
     password: "",
     confirmPassword: "",
   });
   const [registerErrors, setRegisterErrors] = useState({
     username: "",
+    fullName: "",
     password: "",
     confirmPassword: "",
   });
@@ -30,9 +32,10 @@ const AuthPage = () => {
     if (token && userString) {
       try {
         const user = JSON.parse(userString);
-        if (user.role === "ADMIN") navigate("/admin", { replace: true });
-        else if (user.role === "STAFF") navigate("/staff", { replace: true });
-        else if (user.role === "CUSTOMER") navigate("/customer", { replace: true });
+        const role = user.role?.toUpperCase() || "";
+        if (role === "ADMIN") navigate("/admin", { replace: true });
+        else if (role === "STAFF") navigate("/staff", { replace: true });
+        else if (role === "CUSTOMER") navigate("/customer", { replace: true });
       } catch (e) {
         console.error("Auto-redirect error", e);
       }
@@ -55,7 +58,7 @@ const AuthPage = () => {
       if (accessToken && user) {
         // Normalize role: uppercase and map "USER" → "CUSTOMER"
         let role = user.role ? user.role.toUpperCase() : "CUSTOMER";
-        if (role === "USER") role = "CUSTOMER";   // fix for old users
+        if (role === "USER") role = "CUSTOMER";
 
         const normalizedUser = {
           ...user,
@@ -67,8 +70,8 @@ const AuthPage = () => {
 
         showToast("Login Successful", "success");
 
-        if (normalizedUser.role === "ADMIN") navigate("/admin", { replace: true });
-        else if (normalizedUser.role === "STAFF") navigate("/staff", { replace: true });
+        if (role === "ADMIN") navigate("/admin", { replace: true });
+        else if (role === "STAFF") navigate("/staff", { replace: true });
         else navigate("/customer", { replace: true });
       } else {
         showToast("Login failed – invalid response", "error");
@@ -97,6 +100,12 @@ const AuthPage = () => {
     }
     setRegisterErrors((prev) => ({ ...prev, username: "" }));
 
+    if (!registerData.fullName.trim()) {
+      setRegisterErrors((prev) => ({ ...prev, fullName: "Full name is required." }));
+      return;
+    }
+    setRegisterErrors((prev) => ({ ...prev, fullName: "" }));
+
     if (registerData.password.length < 6) {
       setRegisterErrors((prev) => ({ ...prev, password: "Password must be at least 6 characters." }));
       return;
@@ -114,6 +123,7 @@ const AuthPage = () => {
         username: registerData.username,
         email: registerData.email,
         password: registerData.password,
+        fullName: registerData.fullName,   // ✅ Send fullName
       };
       const response = await API.post("/api/auth/register", payload);
       if (response.data.user) {
@@ -122,10 +132,11 @@ const AuthPage = () => {
         setRegisterData({
           username: "",
           email: "",
+          fullName: "",
           password: "",
           confirmPassword: "",
         });
-        setRegisterErrors({ username: "", password: "", confirmPassword: "" });
+        setRegisterErrors({ username: "", fullName: "", password: "", confirmPassword: "" });
       } else {
         showToast(response.data.message || "Registration Failed.", "error");
       }
@@ -189,6 +200,19 @@ const AuthPage = () => {
           </form>
         ) : (
           <form onSubmit={handleRegisterSubmit} className="space-y-5">
+            <div>
+              <label className="block mb-2 font-medium">Full Name</label>
+              <input
+                type="text"
+                placeholder="Enter full name"
+                className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 border-slate-200"
+                value={registerData.fullName}
+                onChange={(e) => setRegisterData({ ...registerData, fullName: e.target.value })}
+                required
+              />
+              {registerErrors.fullName && <p className="text-red-500 text-sm mt-1">{registerErrors.fullName}</p>}
+            </div>
+
             <div>
               <label className="block mb-2 font-medium">Username</label>
               <input
