@@ -5,9 +5,8 @@ import bcrypt from "bcryptjs";
 export const getUsers = async (req, res) => {
   try {
     const users = await User.find({}).select("-password");
-    res.status(200).json(users);
+    res.status(200).json(users); // returns array directly
   } catch (error) {
-    console.error("Error fetching users:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -26,7 +25,7 @@ export const deleteUser = async (req, res) => {
   }
 };
 
-// GET LOGGED IN USER PROFILE (unchanged, but ensure it returns fullName)
+// GET LOGGED IN USER PROFILE
 export const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
@@ -48,8 +47,7 @@ export const getProfile = async (req, res) => {
     });
   }
 };
-
-// UPDATE PROFILE (for any logged-in user)
+// UPDATE PROFILE
 export const updateProfile = async (req, res) => {
   const { username, email, fullName } = req.body;
   try {
@@ -57,7 +55,6 @@ export const updateProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
-
     if (username) {
       const existing = await User.findOne({ username, _id: { $ne: user._id } });
       if (existing) {
@@ -65,7 +62,6 @@ export const updateProfile = async (req, res) => {
       }
       user.username = username;
     }
-
     if (email) {
       const normalizedEmail = email.toLowerCase();
       const existing = await User.findOne({ email: normalizedEmail, _id: { $ne: user._id } });
@@ -74,11 +70,9 @@ export const updateProfile = async (req, res) => {
       }
       user.email = normalizedEmail;
     }
-
     if (fullName) {
       user.fullName = fullName;
     }
-
     await user.save();
     res.json({
       success: true,
@@ -103,26 +97,21 @@ export const changePassword = async (req, res) => {
   if (!currentPassword || !newPassword) {
     return res.status(400).json({ success: false, message: "Both passwords are required" });
   }
-
   try {
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
-
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
       return res.status(400).json({ success: false, message: "Current password is incorrect" });
     }
-
     if (newPassword.length < 6) {
       return res.status(400).json({ success: false, message: "New password must be at least 6 characters" });
     }
-
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
     await user.save();
-
     res.json({ success: true, message: "Password changed successfully" });
   } catch (error) {
     console.error("Change password error:", error);
@@ -130,7 +119,7 @@ export const changePassword = async (req, res) => {
   }
 };
 
-// GET STATS (fixed to uppercase)
+// GET STATS (Uppercase roles)
 export const getStats = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();

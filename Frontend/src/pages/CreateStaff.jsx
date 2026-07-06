@@ -45,8 +45,23 @@ const CreateStaff = () => {
     if (!validateForm()) return;
 
     setLoading(true);
+
+    //  Debug: log what we're sending
+    console.log(" Sending staff data:", {
+      username: formData.username,
+      email: formData.email,
+      fullName: formData.fullName,
+      password: formData.password,
+    });
+
     try {
-      const response = await API.post("/api/admin/staff", formData);
+      const response = await API.post("/api/admin/staff", {
+        username: formData.username,
+        email: formData.email,
+        fullName: formData.fullName,
+        password: formData.password,
+      });
+
       if (response.data.success) {
         showToast("Staff user created successfully!", "success");
         navigate("/admin/users");
@@ -54,11 +69,22 @@ const CreateStaff = () => {
         showToast(response.data.message || "Failed to create staff member", "error");
       }
     } catch (error) {
-      console.error("Error creating staff:", error);
-      showToast(
-        error.response?.data?.message || "An error occurred while creating staff member.",
-        "error"
-      );
+      console.error(" Error creating staff:", error);
+
+      //  Handle token expiration (401) – redirect to login
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        showToast("Session expired – please log in again.", "error");
+        navigate("/");
+        return;
+      }
+
+      // Show backend error message
+      const message =
+        error.response?.data?.message ||
+        "An error occurred while creating staff member.";
+      showToast(message, "error");
     } finally {
       setLoading(false);
     }

@@ -28,7 +28,7 @@ export const register = async (req, res) => {
       username,
       email: normalizedEmail,
       password: hashedPassword,
-      fullName,   // ✅ SAVE FULL NAME
+      fullName,   // SAVE FULL NAME
       role: role ? role.toUpperCase() : "CUSTOMER",
     });
 
@@ -100,7 +100,7 @@ export const login = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        fullName: user.fullName,   // ✅ ADD FULL NAME
+        fullName: user.fullName,   //  ADD FULL NAME
         role: normalizedRole,
       },
     });
@@ -138,7 +138,7 @@ export const refreshToken = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        fullName: user.fullName,   // ✅ ADD FULL NAME
+        fullName: user.fullName,   // ADD FULL NAME
         role: normalizedRole,
       },
     });
@@ -189,7 +189,7 @@ export const createStaff = async (req, res) => {
       username,
       email: normalizedEmail,
       password: hashedPassword,
-      fullName,   // ✅ SAVE FULL NAME
+      fullName,   //  SAVE FULL NAME
       role: "STAFF",
     });
 

@@ -4,7 +4,7 @@ import { connectDB } from "./config/db.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/authRoutes.js";
-import userRoutes from "./routes/userRoutes.js";   // make sure this points to the new file
+import userRoutes from "./routes/userRoutes.js";   
 import adminRoutes from "./routes/adminRoutes.js";
 import { verifyToken } from "./middleware/auth.js";
 import { getProfile } from "./controllers/userController.js";
@@ -31,7 +31,6 @@ app.use("/api/admin", adminRoutes);
 // Direct profile endpoints (to match frontend calls)
 app.get("/api/staff/profile", verifyToken, getProfile);
 app.get("/api/customer/profile", verifyToken, getProfile);
-
 connectDB();
 
 app.listen(PORT, '0.0.0.0', () => {

@@ -1,50 +1,64 @@
 import React, { useEffect, useState } from "react";
 import API from "../api/authService";
 import { useToast } from "../context/ToastContext";
-import { User, Mail, Shield, Loader, FileText, CheckCircle, AlertCircle } from "lucide-react";
+import { Loader, User, Mail, Calendar, ShieldCheck } from "lucide-react";
 
 const Profile = () => {
   const { showToast } = useToast();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const userString = localStorage.getItem("user");
-  let loggedInUser = null;
-  try {
-    loggedInUser = userString ? JSON.parse(userString) : null;
-  } catch (e) {
-    console.error(e);
-  }
-
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!loggedInUser) {
-        setLoading(false);
-        return;
-      }
-
-      const endpoint =
-        loggedInUser.role === "ADMIN" || loggedInUser.role === "STAFF"
-          ? "/api/staff/profile"
-          : "/api/customer/profile";
-
       try {
+        const userString = localStorage.getItem("user");
+        if (!userString) {
+          showToast("Please log in again.", "error");
+          setLoading(false);
+          return;
+        }
+        const loggedInUser = JSON.parse(userString);
+        const role = loggedInUser.role || "CUSTOMER";
+
+        // Determine endpoint based on role
+        const endpoint =
+          role === "ADMIN" || role === "STAFF"
+            ? "/api/staff/profile"
+            : "/api/customer/profile";
+
+        console.log(" Fetching profile from:", endpoint);
+
         const response = await API.get(endpoint);
+        console.log(" Profile response:", response.data);
+
         if (response.data.success) {
           setProfile(response.data.data);
         } else {
-          showToast(response.data.message || "Failed to load profile", "error");
+          showToast(
+            response.data.message || "Failed to load profile",
+            "error"
+          );
         }
       } catch (error) {
-        console.error("Error fetching profile:", error);
-        showToast("Error retrieving profile details from backend", "error");
+        console.error(" Error fetching profile:", error);
+        if (error.response?.status === 401) {
+          showToast("Session expired – please log in again.", "error");
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "/";
+          return;
+        }
+        showToast(
+          error.response?.data?.message || "Error retrieving profile details",
+          "error"
+        );
       } finally {
         setLoading(false);
       }
     };
 
     fetchProfile();
-  }, [showToast, loggedInUser?.role]);
+  }, [showToast]);
 
   if (loading) {
     return (
@@ -57,99 +71,60 @@ const Profile = () => {
 
   if (!profile) {
     return (
-      <div className="bg-red-50 text-red-700 p-6 rounded-2xl border border-red-200 flex items-center gap-3">
-        <AlertCircle className="w-6 h-6 flex-shrink-0" />
-        <span>No profile data could be retrieved. Please try logging in again.</span>
+      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center">
+        <p className="text-slate-500">No profile data available.</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
-  const formattedDate = profile.createdAt
-    ? new Date(profile.createdAt).toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "N/A";
-
-  const getRoleBadge = (role) => {
-    switch (role) {
-      case "ADMIN":
-        return "bg-rose-50 text-rose-700 border-rose-200";
-      case "STAFF":
-        return "bg-amber-50 text-amber-700 border-amber-200";
-      default:
-        return "bg-blue-50 text-blue-700 border-blue-200";
-    }
-  };
-
   return (
-    <div className="max-w-3xl mx-auto space-y-8 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Account Profile</h1>
-        <p className="text-slate-500 mt-1">Review your personal details and privileges.</p>
-      </div>
-
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="h-32 bg-gradient-to-r from-blue-500 to-sky-600"></div>
-
-        <div className="px-8 pb-8 relative">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between -mt-16 mb-8 gap-4">
-            <div className="w-28 h-28 bg-slate-100 border-4 border-white rounded-2xl shadow flex items-center justify-center text-slate-500">
-              <User className="w-14 h-14" />
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider border ${getRoleBadge(profile.role)}`}>
-                {profile.role}
-              </span>
-              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">
-                <CheckCircle className="w-3.5 h-3.5" />
-                {profile.enabled ? "Active Account" : "Disabled"}
-              </span>
-            </div>
+    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
+      <h1 className="text-3xl font-bold text-slate-900">My Profile</h1>
+      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+        <div className="flex items-center gap-4 border-b border-slate-100 pb-6">
+          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 text-2xl font-bold">
+            {profile.fullName?.charAt(0) || profile.username?.charAt(0) || "U"}
           </div>
+          <div>
+            <h2 className="text-xl font-semibold">{profile.fullName || profile.username}</h2>
+            <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
+              {profile.role}
+            </span>
+          </div>
+        </div>
 
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-800">{profile.fullName || "User Profile"}</h2>
-              <p className="text-slate-500 text-sm font-medium">Member since: {formattedDate}</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-slate-100 pt-6">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Username</label>
-                <div className="flex items-center gap-2.5 text-slate-700 font-medium">
-                  <User className="w-4 h-4 text-slate-400" />
-                  {profile.username}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Email Address</label>
-                <div className="flex items-center gap-2.5 text-slate-700 font-medium">
-                  <Mail className="w-4 h-4 text-slate-400" />
-                  {profile.email}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">User ID</label>
-                <div className="flex items-center gap-2.5 text-slate-700 font-medium">
-                  <FileText className="w-4 h-4 text-slate-400" />
-                  #{profile.id}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Security Credentials</label>
-                <div className="flex items-center gap-2.5 text-slate-700 font-medium">
-                  <Shield className="w-4 h-4 text-slate-400" />
-                  JWT Secured
-                </div>
-              </div>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-center gap-3 text-slate-600">
+            <User className="w-5 h-5 text-slate-400" />
+            <span>
+              <span className="font-medium">Username:</span> {profile.username}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-slate-600">
+            <Mail className="w-5 h-5 text-slate-400" />
+            <span>
+              <span className="font-medium">Email:</span> {profile.email}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-slate-600">
+            <Calendar className="w-5 h-5 text-slate-400" />
+            <span>
+              <span className="font-medium">Joined:</span>{" "}
+              {new Date(profile.createdAt).toLocaleDateString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-slate-600">
+            <ShieldCheck className="w-5 h-5 text-slate-400" />
+            <span>
+              <span className="font-medium">Status:</span>{" "}
+              <span className="text-emerald-600">Active</span>
+            </span>
           </div>
         </div>
       </div>

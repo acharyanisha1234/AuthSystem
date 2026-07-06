@@ -12,8 +12,7 @@ export const verifyToken = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
-    console.error("❌ Token verification failed:", error.message);
-    //  Return 401 so frontend interceptor triggers refresh
+    //  Return 401 so the frontend interceptor can refresh
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 };

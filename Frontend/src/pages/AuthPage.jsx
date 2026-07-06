@@ -14,7 +14,7 @@ const AuthPage = () => {
   const [registerData, setRegisterData] = useState({
     username: "",
     email: "",
-    fullName: "",          // ✅ Added fullName
+    fullName: "",          //  Added fullName
     password: "",
     confirmPassword: "",
   });
@@ -123,7 +123,7 @@ const AuthPage = () => {
         username: registerData.username,
         email: registerData.email,
         password: registerData.password,
-        fullName: registerData.fullName,   // ✅ Send fullName
+        fullName: registerData.fullName,   //  Send fullName
       };
       const response = await API.post("/api/auth/register", payload);
       if (response.data.user) {

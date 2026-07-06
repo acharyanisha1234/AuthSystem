@@ -6,6 +6,7 @@ const API = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+// Request interceptor: add token to every request
 API.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -17,6 +18,7 @@ API.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Response interceptor: handle 401 by refreshing token
 API.interceptors.response.use(
   (response) => response,
   async (error) => {
