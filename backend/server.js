@@ -16,9 +16,8 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ============================================================
+
 // MIDDLEWARE
-// ============================================================
 
 // Parse JSON request bodies
 app.use(express.json());
@@ -35,25 +34,24 @@ app.use(
 // Parse cookies attached to the request (needed for refreshToken)
 app.use(cookieParser());
 
-// ============================================================
 // ROUTE MOUNTING
-// ============================================================
 
-// ---- Auth routes (public + staff creation) ----
+
+// ---- Auth routes (public + staff creation) 
 // Mounted at /api/auth
 app.use("/api/auth", authRoutes);
 
-// ---- User routes (authenticated profile & password) ----
+// ---- User routes (authenticated profile & password) 
 // Mounted at /api/users
 app.use("/api/users", userRoutes);
 
-// ---- Admin routes (admin‑only operations) ----
+// ---- Admin routes (admin‑only operations) 
 // Mounted at /api/admin
 app.use("/api/admin", adminRoutes);
 
-// ============================================================
+
 // DIRECT PROFILE ENDPOINTS (for role‑specific frontend dashboards)
-// ============================================================
+
 // The frontend dashboards (StaffDashboard, CustomerDashboard)
 // call GET /api/staff/profile and /api/customer/profile respectively.
 // Both share the same getProfile controller – the user's role
@@ -63,10 +61,8 @@ app.use("/api/admin", adminRoutes);
 app.get("/api/staff/profile", verifyToken, getProfile);
 app.get("/api/customer/profile", verifyToken, getProfile);
 
-// ============================================================
-// DATABASE CONNECTION & SERVER START
-// ============================================================
 
+// DATABASE CONNECTION & SERVER START
 // Connect to MongoDB
 connectDB();
 
