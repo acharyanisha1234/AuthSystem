@@ -16,7 +16,7 @@ export const getUsers = async (req, res) => {
 };
 
 
-// DELETE USER – Admin only (soft delete or permanent delete)
+// DELETE USER – Admin only soft delete or permanent delete
 
 export const deleteUser = async (req, res) => {
   try {
@@ -77,7 +77,7 @@ export const updateProfile = async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // ---- Update username if provided ----
+    // Update username if provided 
     if (username) {
       // Check if the new username is already taken by another user (excluding this user)
       const existing = await User.findOne({ username, _id: { $ne: user._id } });
@@ -87,7 +87,7 @@ export const updateProfile = async (req, res) => {
       user.username = username;
     }
 
-    // ---- Update email if provided ----
+    // Update email if provided 
     if (email) {
       const normalizedEmail = email.toLowerCase();
       // Check uniqueness of the new email (excluding current user)
@@ -98,7 +98,7 @@ export const updateProfile = async (req, res) => {
       user.email = normalizedEmail;
     }
 
-    // ---- Update fullName if provided ----
+    //  Update fullName if provided 
     if (fullName) {
       user.fullName = fullName;
     }
